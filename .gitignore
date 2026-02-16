@@ -1,9 +1,23 @@
 # Intermediate/temp files
 tmp/
 
+# Generated data (keep structure via .gitkeep, ignore contents)
+data/processed_log.csv
+data/digests/*.md
+data/energy_watch.log
+data/cron.log
+
 # Environment and secrets
 .env
 
 # Google OAuth credentials
 credentials.json
 token.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/

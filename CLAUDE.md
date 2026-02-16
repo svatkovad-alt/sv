@@ -66,13 +66,45 @@ Errors are learning opportunities. When something breaks:
 ```
 directives/   - SOPs in Markdown (the instruction set)
 execution/    - Python scripts (the deterministic tools)
+data/         - Persistent state (logs, digests). Survives restarts.
+  digests/    - Daily generated reports (Markdown)
 tmp/          - All intermediate files (dossiers, scraped data, temp exports).
                 Never commit, always regenerated.
-.env          - Environment variables and API keys
+.env          - Environment variables and API keys (see .env.example)
 credentials.json, token.json - Google OAuth credentials (in .gitignore)
 ```
 
-**Key principle:** Local files are only for processing. Deliverables live in cloud services (Google Sheets, Slides, etc.) where the user can access them. Everything in `tmp/` can be deleted and regenerated.
+**Key principle:** Local files are only for processing. Deliverables live in cloud services (Google Sheets, Slides, etc.) where the user can access them. Everything in `tmp/` can be deleted and regenerated. `data/` is persistent state.
+
+## Active Directives
+
+| Directive | Runner | Purpose |
+|-----------|--------|---------|
+| `directives/daily_energy_law_watch.md` | `execution/run_energy_watch.py` | Daily monitoring of Ukrainian energy law across 7 official sources |
+
+## Setup
+
+```bash
+pip install -r requirements.txt
+cp .env.example .env
+# Add ANTHROPIC_API_KEY to .env
+```
+
+### Running the Energy Watch
+
+```bash
+# One-time run (with AI analysis)
+python execution/run_energy_watch.py
+
+# Without AI analysis (scraping + filtering only)
+python execution/run_energy_watch.py --no-ai
+
+# Daemon mode (runs daily at 08:30)
+python execution/run_energy_watch.py --daemon
+
+# Verbose logging
+python execution/run_energy_watch.py -v
+```
 
 ## Summary
 
