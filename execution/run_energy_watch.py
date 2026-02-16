@@ -25,6 +25,7 @@ from energy_watch_filter import filter_relevant
 from energy_watch_log import add_to_log, deduplicate_items, load_log
 from energy_watch_report import compile_full_report, save_report
 from energy_watch_scraper import enrich_items, scrape_all_sources
+from energy_watch_telegram import is_configured as tg_configured, send_report as tg_send_report, send_notification
 
 # --- Логування ---
 LOG_FORMAT = "%(asctime)s [%(name)s] %(levelname)s: %(message)s"
@@ -44,7 +45,7 @@ def setup_logging(verbose: bool = False) -> None:
 logger = logging.getLogger("energy_watch.runner")
 
 
-def run_daily_cycle(use_ai: bool = True) -> Path:
+def run_daily_cycle(use_ai: bool = True, use_telegram: bool = True) -> Path:
     """Виконати повний щоденний цикл.
 
     Повертає шлях до згенерованого звіту.
@@ -67,6 +68,8 @@ def run_daily_cycle(use_ai: bool = True) -> Path:
         # Все одно створити порожній звіт
         report = compile_full_report([], run_date, use_ai=False)
         report_path = save_report(report, run_date)
+        if tg_configured():
+            send_notification(f"⚠️ Energy Watch {run_date}: жодних публікацій не знайдено. Перевірте підключення.")
         logger.info("Empty report saved to %s", report_path)
         return report_path
 
@@ -97,6 +100,14 @@ def run_daily_cycle(use_ai: bool = True) -> Path:
     add_to_log(enriched, status="processed")
     add_to_log(skipped, status="skipped", reason="irrelevant")
 
+    # Крок 8: Відправити в Telegram
+    if use_telegram and tg_configured():
+        logger.info("Step 8: Sending report to Telegram...")
+        tg_send_report(report, run_date)
+    else:
+        logger.info("Step 8: Telegram %s — skipping",
+                     "disabled" if not use_telegram else "not configured")
+
     logger.info("=" * 60)
     logger.info("Daily cycle complete. Report: %s", report_path)
     logger.info("Processed: %d items, Skipped: %d items", len(enriched), len(skipped))
@@ -105,7 +116,7 @@ def run_daily_cycle(use_ai: bool = True) -> Path:
     return report_path
 
 
-def run_daemon() -> None:
+def run_daemon(use_telegram: bool = True) -> None:
     """Запустити в режимі демона — щоденно о 08:30."""
     try:
         import schedule
@@ -117,13 +128,13 @@ def run_daemon() -> None:
         )
         sys.exit(1)
 
-    logger.info("Starting daemon mode. Scheduled daily at 08:30.")
+    logger.info("Starting daemon mode. Scheduled daily at 08:30. Telegram=%s", use_telegram)
 
-    schedule.every().day.at("08:30").do(run_daily_cycle)
+    schedule.every().day.at("08:30").do(run_daily_cycle, use_telegram=use_telegram)
 
     # Запустити одразу при старті
     logger.info("Running initial cycle now...")
-    run_daily_cycle()
+    run_daily_cycle(use_telegram=use_telegram)
 
     while True:
         schedule.run_pending()
@@ -145,6 +156,11 @@ def main():
         help="Запустити в режимі демона (щоденно о 08:30)",
     )
     parser.add_argument(
+        "--no-telegram",
+        action="store_true",
+        help="Не відправляти звіт у Telegram",
+    )
+    parser.add_argument(
         "--verbose", "-v",
         action="store_true",
         help="Детальне логування (DEBUG рівень)",
@@ -153,10 +169,12 @@ def main():
 
     setup_logging(verbose=args.verbose)
 
+    use_tg = not args.no_telegram
+
     if args.daemon:
-        run_daemon()
+        run_daemon(use_telegram=use_tg)
     else:
-        report_path = run_daily_cycle(use_ai=not args.no_ai)
+        report_path = run_daily_cycle(use_ai=not args.no_ai, use_telegram=use_tg)
         print(f"\nЗвіт збережено: {report_path}")
 
 

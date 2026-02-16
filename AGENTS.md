@@ -93,14 +93,17 @@ cp .env.example .env
 ### Running the Energy Watch
 
 ```bash
-# One-time run (with AI analysis)
+# One-time run (with AI analysis + Telegram delivery)
 python execution/run_energy_watch.py
 
 # Without AI analysis (scraping + filtering only)
 python execution/run_energy_watch.py --no-ai
 
-# Daemon mode (runs daily at 08:30)
+# Daemon mode (runs daily at 08:30, sends to Telegram)
 python execution/run_energy_watch.py --daemon
+
+# Without Telegram (save report locally only)
+python execution/run_energy_watch.py --no-telegram
 
 # Verbose logging
 python execution/run_energy_watch.py -v

@@ -27,6 +27,7 @@
 | Скрипт | Призначення |
 |--------|-------------|
 | `execution/energy_watch_config.py` | Конфігурація: джерела, ключові слова, шляхи |
+| `execution/energy_watch_telegram.py` | Відправка звітів у Telegram через Bot API |
 | `execution/energy_watch_scraper.py` | Веб-скрапінг усіх 7 джерел |
 | `execution/energy_watch_filter.py` | Фільтрація за релевантністю (ключові слова + контекст) |
 | `execution/energy_watch_report.py` | Генерація звітів: Digest (A), Article Opportunities (B), Content Skeleton (C) |
@@ -61,6 +62,7 @@
 6. Згенерувати **Секцію B — Article Opportunities** (теми для статей)
 7. Якщо є нові необроблені матеріали → **Секцію C — Content Skeleton**
 8. Зберегти результат у `data/digests/YYYY-MM-DD.md`
+9. **Відправити звіт у Telegram** (якщо `TELEGRAM_BOT_TOKEN` та `TELEGRAM_CHAT_ID` налаштовані в `.env`)
 
 ## Формат виходу
 
